@@ -1,43 +1,41 @@
-import fs from 'fs';
-import { join, resolve } from 'path';
+import { readdir, mkdir, copyFile, access } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-const copy = async () => {
-  const destination = path.join(__dirname, 'files_copy');
-
-  fs.access(destination, (error) => {
-    error
-      ? copyDir()
-      : fs.rm(destination, { recursive: true, force: true }, () => {
-          copyDir();
-        });
-  });
-
-  function copyDir() {
-    fs.mkdir(destination, { recursive: true }, (err) => {
-      if (err) console.error(err);
-    });
-    fs.readdir(
-      path.join(__dirname, 'files'),
-      { withFileTypes: true },
-      (error, files) => {
-        if (error) {
-          console.log(error);
-        } else {
-          files.forEach((file) => {
-            if (file.isFile()) {
-              fs.createReadStream(
-                path.join(__dirname, 'files', file.name)
-              ).pipe(fs.createWriteStream(path.join(destination, file.name)));
-            }
-          });
-        }
-      }
-    );
+const checkIfExists = async (path) => {
+  try {
+    await access(path);
+    return true;
+  } catch (error) {
+    return false;
   }
 };
 
-await copy();
+const getAbsoluteURL = (path) => new URL(path, import.meta.url);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ORIGIN_FOLDER = getAbsoluteURL('files');
+const DESTINATION_FOLDER = getAbsoluteURL('files_copy');
+
+const copy = async () => {
+  if (
+    (await checkIfExists(DESTINATION_FOLDER)) ||
+    !(await checkIfExists(ORIGIN_FOLDER))
+  ) {
+    throw new Error('FS operation failed');
+  } else {
+    const [filesToCopy] = await Promise.all([
+      readdir(ORIGIN_FOLDER, mkdir(DESTINATION_FOLDER)),
+    ]);
+    const promises = filesToCopy.map((name) =>
+      copyFile(
+        path.join(__dirname, 'files', `${name}`),
+        path.join(__dirname, 'files_copy', `${name}`)
+      )
+    );
+    await Promise.all(promises);
+  }
+};
+
+copy();
