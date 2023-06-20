@@ -5,17 +5,10 @@ import { createServer as createServerHttp } from 'http';
 import { fileURLToPath } from 'url';
 import './files/c.js';
 
-import a from './files/a.json' assert { type: 'json' };
-import b from './files/b.json' assert { type: 'json' };
-
-// const { default: a } = await import('./files/a.json');
-// const { default: b } = await import('./files/a.json');
-
-// let importedModuleName = Math.random() > 0.5 ? 'a' : 'b';
-// import importedModuleName from `./files/${importedModuleName}.json` assert {type: 'json'};
-// let unknownObject = importedModuleName;
-
-let unknownObject = Math.random() > 0.5 ? a : b;
+const unknownObject =
+  Math.random() > 0.5
+    ? await import('./files/a.json', { assert: { type: 'json' } })
+    : await import('./files/b.json', { assert: { type: 'json' } });
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -31,7 +24,8 @@ const myServer = createServerHttp((_, res) => {
   res.end('Request accepted');
 });
 
-const PORT = 3000;
+const PORT = 3456;
+//change port to any other (3465, etc.) if you already have something listening on port 3000
 
 console.log(unknownObject);
 
