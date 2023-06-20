@@ -4,11 +4,12 @@ import { release, version } from 'os';
 import { createServer as createServerHttp } from 'http';
 import { fileURLToPath } from 'url';
 import './files/c.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const unknownObject =
-  Math.random() > 0.5
-    ? await import('./files/a.json', { assert: { type: 'json' } })
-    : await import('./files/b.json', { assert: { type: 'json' } });
+  Math.random() > 0.5 ? require('./files/a.json') : require('./files/b.json');
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
